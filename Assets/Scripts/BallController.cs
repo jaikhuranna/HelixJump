@@ -43,7 +43,7 @@ public class BallController : MonoBehaviour
             {
                 isDead = true;
                 print("Game Over");
-                // GameManager.Instance.GameOver();
+                GameManager.Instance.GameOver();
             }
         }
     }
