@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = System.Random;
@@ -7,42 +6,91 @@ public class LevelManager : MonoBehaviour
 {
     [SerializeField] private GameObject[] platformPrefabs;
     [SerializeField] private GameObject Core;
-    [SerializeField] private BoxCollider loadingTrigger;
 
     [SerializeField] private int platformPoolSize = 20;
-    [SerializeField] private int platformGap = 5;
+    [SerializeField] private float platformGap = 5f;
+    
     public List<GameObject> platformPool = new List<GameObject>();
+    private List<int> availableIndices = new List<int>();  
+    
+    private Random random;
+    private float positionIncrement = 0f;
+    public int totalPlaced = 0;
 
-    private Random random; 
-    private int positionIncrement = 5;
     private void Start()
     {
-        Random random = new Random();
+        random = new Random();
         for (int i = 0; i < platformPoolSize; i++)
         {
-            platformPool.Add(Instantiate(platformPrefabs[random.Next(6)], Core.transform));
+            platformPool.Add(Instantiate(platformPrefabs[random.Next(platformPrefabs.Length)], Core.transform));
             platformPool[i].SetActive(false);
+            availableIndices.Add(i);  
         }
         
-        // Loads inital 20 platfroms form the pool
+        // Load initial platforms
         loadPlatformFromPool(20);
     }
 
-    private void loadPlatformFromPool(int platformCount)
+    public void loadPlatformFromPool(int platformCount)
     {
-        Random random = new Random();
         for (int j = 0; j < platformCount; j++)
         {
-            GameObject localPlatform = platformPool[random.Next(platformPool.Count)];
+            if (availableIndices.Count == 0)
+            {
+                Debug.LogWarning("All platforms in use! Consider increasing pool size.");
+                return;
+            }
+            
+            int randomIndex = random.Next(0, availableIndices.Count);
+            int platformIndex = availableIndices[randomIndex];
+            availableIndices.RemoveAt(randomIndex);
+            
+            GameObject localPlatform = platformPool[platformIndex];
             localPlatform.SetActive(true);
-            localPlatform.transform.position = new Vector3(
-                0, 
-                0 - positionIncrement, 
-                0);
-            // localPlatform.transform.Rotate(new Vector3(0, 1, 0));
+            
+            PlatformData data = localPlatform.GetComponent<PlatformData>();
+            if (data == null)
+            {
+                data = localPlatform.AddComponent<PlatformData>();
+            }
+            data.poolIndex = platformIndex;
+            
+            localPlatform.transform.position = new Vector3(0, -1f * positionIncrement, 0);
+            localPlatform.transform.Rotate(new Vector3(0, (float)random.NextDouble() * 360f, 0));
             positionIncrement += platformGap;
-            print("positionIncrement:" +  positionIncrement);
+            totalPlaced++;
+        }
+    }
+    
+    public void ReturnToPool(GameObject platform)
+    {
+        PlatformData data = platform.GetComponent<PlatformData>();
+        if (data != null && !availableIndices.Contains(data.poolIndex))
+        {
+            availableIndices.Add(data.poolIndex);
         }
     }
 
+    public void ResetLevel()
+    {
+        foreach (GameObject platform in platformPool)
+        {
+            platform.SetActive(false);
+        }
+        availableIndices.Clear();
+        for (int i = 0; i < platformPool.Count; i++)
+        {
+            availableIndices.Add(i);
+        }
+        
+        positionIncrement = 0f;
+        totalPlaced = 0;
+        
+        loadPlatformFromPool(20);
+    }
+}
+
+public class PlatformData : MonoBehaviour
+{
+    public int poolIndex;
 }
