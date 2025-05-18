@@ -42,7 +42,6 @@ public class BallController : MonoBehaviour
             if (angle > deathAngleThreshold)
             {
                 isDead = true;
-                print("Game Over");
                 GameManager.Instance.GameOver();
             }
         }

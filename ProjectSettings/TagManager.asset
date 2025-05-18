@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Evil
   - Platform
+  - Ball
   layers:
   - Default
   - TransparentFX
